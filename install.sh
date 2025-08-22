@@ -9,39 +9,40 @@ SERVER_PORT=8388
 PASSWORD="matkhau123"
 METHOD="aes-256-gcm"
 
-# Lấy IP của VPS
+# Lấy IP VPS
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
 echo "👉 Đang cài đặt Shadowsocks-libev..."
 sudo apt update -y
 sudo apt install -y shadowsocks-libev qrencode
 
-# Tạo thư mục config nếu chưa có
+# Tạo thư mục config
 sudo mkdir -p /etc/shadowsocks-libev
 
-# Ghi file cấu hình
+# Ghi file cấu hình JSON
 cat <<EOF | sudo tee /etc/shadowsocks-libev/config.json
 {
-    "server":"0.0.0.0",
-    "server_port":$SERVER_PORT,
-    "password":"$PASSWORD",
-    "timeout":300,
-    "method":"$METHOD"
+  "server":"0.0.0.0",
+  "server_port":$SERVER_PORT,
+  "password":"$PASSWORD",
+  "timeout":300,
+  "method":"$METHOD"
 }
 EOF
 
-# Khởi động service
+# Khởi động dịch vụ
 sudo systemctl enable shadowsocks-libev
 sudo systemctl restart shadowsocks-libev
 
-# Mở firewall nếu có ufw
+# Mở port trên firewall nếu dùng UFW
 if command -v ufw >/dev/null; then
-    sudo ufw allow $SERVER_PORT/tcp
-    sudo ufw allow $SERVER_PORT/udp
+  sudo ufw allow $SERVER_PORT/tcp
+  sudo ufw allow $SERVER_PORT/udp
 fi
 
-# Tạo link ss:// (base64 chuẩn)
-SS_LINK="ss://$(echo -n "$METHOD:$PASSWORD@$SERVER_IP:$SERVER_PORT" | base64 -w0)"
+# Tạo link ss:// (Base64 chuẩn)
+SS_RAW="$METHOD:$PASSWORD@$SERVER_IP:$SERVER_PORT"
+SS_LINK="ss://$(echo -n "$SS_RAW" | base64 | tr -d '\n')"
 
 echo "===================================="
 echo "✅ Shadowsocks đã được cài đặt thành công!"
